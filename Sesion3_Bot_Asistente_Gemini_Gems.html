@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Construir tu primer bot — Universidad Uk</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --orange: #ff671b;
+    --navy:   #102947;
+    --teal:   #0788a8;
+    --sage:   #1a9e6e;
+    --rose:   #c94f3a;
+    --cream:  #f4efe6;
+    --cream2: #ece5d9;
+    --card:   #ffffff;
+    --text:   #0f1f33;
+    --fh: 'Space Grotesk', sans-serif;
+    --fm: 'JetBrains Mono', monospace;
+    --bar: 52px;
+    --pad: 48px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--fh); background: #000; width: 100vw; height: 100vh; overflow: hidden; color: var(--text); }
+  #deck { position: relative; width: 100%; height: 100%; }
+
+  .slide { position: absolute; inset: 0; display: flex; flex-direction: column; opacity: 0; pointer-events: none; transition: opacity .3s ease; padding-bottom: var(--bar); overflow: hidden; z-index: 1; }
+  .slide.active { opacity: 1; pointer-events: all; z-index: 2; }
+
+  @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+  .slide.active .anim-1 { animation: fadeUp .35s ease both; animation-delay: .05s; }
+  .slide.active .anim-2 { animation: fadeUp .35s ease both; animation-delay: .12s; }
+  .slide.active .anim-3 { animation: fadeUp .35s ease both; animation-delay: .19s; }
+  .slide.active .anim-4 { animation: fadeUp .35s ease both; animation-delay: .26s; }
+  .slide.active .anim-5 { animation: fadeUp .35s ease both; animation-delay: .33s; }
+  .slide.active .anim-6 { animation: fadeUp .35s ease both; animation-delay: .40s; }
+  .slide.active .anim-fade { animation: fadeIn .4s ease both; animation-delay: .08s; }
+
+  /* COVER */
+  .s-cover { background: var(--navy); background-image: radial-gradient(ellipse at 68% 38%, #1a3d5e 0%, var(--navy) 65%); flex-direction: row; align-items: stretch; }
+  .cover-left { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 36px var(--pad); gap: 14px; }
+  .cover-eyebrow { font-family: var(--fm); font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--orange); }
+  .cover-title { font-size: clamp(22px, 3vw, 38px); font-weight: 700; color: #fff; line-height: 1.12; }
+  .cover-title em { color: var(--orange); font-style: normal; }
+  .cover-objective { font-size: 13px; color: rgba(255,255,255,.72); line-height: 1.6; max-width: 440px; border-left: 3px solid var(--orange); padding-left: 14px; }
+  .cover-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+  .cover-tag { font-size: 11px; font-family: var(--fm); background: rgba(255,255,255,.08); color: rgba(255,255,255,.75); border: 1px solid rgba(255,255,255,.15); border-radius: 4px; padding: 4px 10px; }
+  .cover-right { width: 310px; background: rgba(255,255,255,.04); border-left: 1px solid rgba(255,255,255,.09); display: flex; flex-direction: column; justify-content: center; padding: 28px 20px; gap: 5px; overflow: hidden; }
+  .plan-label { font-size: 10px; font-family: var(--fm); letter-spacing: 2px; text-transform: uppercase; color: var(--orange); margin-bottom: 6px; }
+  .plan-item { display: flex; align-items: flex-start; gap: 10px; padding: 6px 10px; background: rgba(255,255,255,.05); border-radius: 8px; border-left: 3px solid transparent; }
+  .plan-item.b1 { border-color: rgba(255,103,27,.4); }
+  .plan-item.b2 { border-color: rgba(7,136,168,.4); }
+  .plan-item.done { border-color: rgba(26,158,110,.4); }
+  .plan-time { font-family: var(--fm); font-size: 11px; color: var(--orange); min-width: 28px; font-weight: 600; margin-top: 1px; }
+  .plan-text { font-size: 12px; color: rgba(255,255,255,.8); line-height: 1.3; }
+  .plan-phase { font-family: var(--fm); font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(255,103,27,.6); margin-top: 6px; margin-bottom: 2px; padding-left: 4px; }
+
+  /* CREAM */
+  .s-cream { background: var(--cream); }
+  .cream-header { background: var(--navy); padding: 16px var(--pad); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+  .cream-header-title { font-size: 18px; font-weight: 700; color: #fff; }
+  .cream-header-badge { font-family: var(--fm); font-size: 12px; background: var(--orange); color: #fff; border-radius: 20px; padding: 4px 14px; }
+
+  /* TRANSITION */
+  .s-trans { overflow: hidden; }
+  .s-trans-navy { background: var(--navy); color: #fff; }
+  .trans-inner { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 0 var(--pad); position: relative; z-index: 1; }
+  .trans-big { position: absolute; right: -20px; bottom: -60px; font-size: 280px; font-weight: 900; opacity: .07; line-height: 1; pointer-events: none; font-family: var(--fh); z-index: 0; color: #fff; }
+  .trans-fase { font-family: var(--fm); font-size: 11px; letter-spacing: 3px; text-transform: uppercase; opacity: .7; margin-bottom: 10px; }
+  .trans-name { font-size: clamp(24px, 3.4vw, 44px); font-weight: 700; line-height: 1.1; margin-bottom: 14px; }
+  .s-trans-navy .trans-name em { color: var(--orange); font-style: normal; }
+  .trans-purpose { font-size: 15px; opacity: .82; max-width: 520px; line-height: 1.65; }
+  .trans-duration { margin-top: 14px; font-family: var(--fm); font-size: 12px; opacity: .6; }
+
+  /* VID BTN */
+  .vid-btn-wrap { position: relative; display: inline-block; margin-top: 14px; }
+  .vid-btn { display: inline-flex; align-items: center; gap: 8px; border: none; border-radius: 8px; padding: 9px 16px; cursor: pointer; font-family: var(--fh); font-weight: 600; font-size: 13px; transition: opacity .2s, transform .15s; }
+  .vid-btn:hover { opacity: .88; transform: translateY(-1px); }
+  .vid-btn-orange { background: var(--orange); color: #fff; }
+  .vid-btn-teal   { background: var(--teal);   color: #fff; }
+  .vid-btn-label  { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; }
+  .vid-btn-title  { font-size: 13px; font-weight: 700; line-height: 1; }
+  .vid-btn-sub    { font-size: 10px; font-weight: 400; opacity: .78; }
+  .vid-btn-icon   { font-size: 16px; line-height: 1; flex-shrink: 0; }
+  .vid-tooltip { display: none; position: absolute; bottom: calc(100% + 10px); left: 0; background: rgba(10,22,40,.97); border: 1px solid rgba(255,103,27,.3); border-radius: 10px; padding: 10px 14px; font-size: 13px; line-height: 1.55; color: rgba(255,255,255,.85); max-width: 340px; white-space: normal; z-index: 200; pointer-events: none; }
+  .vid-tooltip::after { content: ''; position: absolute; top: 100%; left: 18px; border: 6px solid transparent; border-top-color: rgba(255,103,27,.3); }
+  .vid-btn-wrap:hover .vid-tooltip { display: block; }
+
+  /* ACTIVITY */
+  .s-activity { background: var(--navy); background-image: radial-gradient(ellipse at 80% 20%, #1c3f60 0%, var(--navy) 65%); flex-direction: column; }
+  .act-header { display: flex; align-items: baseline; gap: 14px; padding: 18px var(--pad) 0; flex-shrink: 0; position: relative; z-index:1; }
+  .act-num-bg { position: absolute; top: -8px; left: calc(var(--pad) - 8px); font-size: 120px; font-weight: 900; color: rgba(255,255,255,.035); font-family: var(--fh); line-height: 1; pointer-events: none; z-index: 0; }
+  .act-eyebrow { font-family: var(--fm); font-size: 10px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--orange); }
+  .act-title { font-size: clamp(14px, 1.7vw, 21px); font-weight: 700; color: #fff; line-height: 1.15; padding: 4px var(--pad) 0; position: relative; z-index:1; }
+  .act-body { flex: 1; display: flex; flex-direction: row; overflow: hidden; padding: 8px var(--pad) 8px; gap: 18px; position: relative; z-index:1; }
+  .act-content { flex: 1; display: flex; flex-direction: column; gap: 8px; justify-content: center; min-width: 0; }
+  .act-instruction { font-size: 13.5px; color: rgba(255,255,255,.8); line-height: 1.6; }
+  .act-steps { display: flex; flex-direction: column; gap: 6px; }
+  .act-step { display: flex; gap: 12px; align-items: flex-start; font-size: 13px; color: rgba(255,255,255,.85); line-height: 1.5; }
+  .step-num { min-width: 22px; height: 22px; background: var(--orange); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; margin-top: 2px; flex-shrink: 0; }
+
+  /* META BAR */
+  .meta-bar { display: flex; gap: 10px; padding: 9px var(--pad); background: rgba(255,255,255,.04); border-top: 1px solid rgba(255,255,255,.07); flex-shrink: 0; }
+  .meta-card { background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1); border-radius: 10px; padding: 8px 13px; display: flex; align-items: center; gap: 10px; flex: 1; }
+  .meta-card.sage { border-color: rgba(26,158,110,.35); background: rgba(26,158,110,.12); flex: 1.5; }
+  .meta-card.teal { border-color: rgba(7,136,168,.35); background: rgba(7,136,168,.1); }
+  .meta-card.time-card { flex: 0 0 auto; min-width: 118px; }
+  .meta-label { font-size: 9px; font-family: var(--fm); letter-spacing: 1.5px; text-transform: uppercase; color: rgba(255,255,255,.4); white-space: nowrap; }
+  .meta-value { font-size: 13px; font-weight: 600; color: #fff; line-height: 1.2; }
+  .meta-value.big { font-size: 26px; color: var(--orange); font-family: var(--fm); line-height: 1; }
+  .meta-sub { font-size: 11px; color: rgba(255,255,255,.45); margin-top: 1px; }
+  .meta-text-group { display: flex; flex-direction: column; gap: 1px; }
+  .sage .meta-label { color: rgba(26,158,110,.8); }
+  .teal .meta-label { color: rgba(7,136,168,.8); }
+
+  /* CRITERIA */
+  .criteria-list { display: flex; flex-direction: column; gap: 7px; }
+  .criteria-item { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: var(--navy); line-height: 1.45; }
+  .criteria-check { width: 20px; height: 20px; min-width: 20px; border-radius: 5px; background: var(--sage); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 10px; margin-top: 1px; cursor: pointer; transition: background .2s, transform .15s; }
+  .criteria-check:hover { background: #157a55; transform: scale(1.1); }
+  .criteria-check.checked { background: #0d5c3e; }
+  .criteria-item.checked-item { opacity: .55; }
+
+  /* CLOSE CARDS */
+  .close-card { background: var(--card); border-radius: 12px; padding: 14px 16px; border: 1px solid rgba(0,0,0,.06); }
+  .close-card.navy { background: var(--navy); }
+  .close-card-label { font-family: var(--fm); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--orange); margin-bottom: 5px; }
+  .close-card-title { font-size: 14px; font-weight: 700; color: var(--navy); margin-bottom: 5px; }
+  .close-card.navy .close-card-title { color: #fff; }
+
+  /* Q BUTTONS */
+  .q-btn { background: var(--card); border: 2px solid transparent; border-radius: 14px; padding: 12px 16px; cursor: pointer; text-align: left; transition: border-color .2s, background .2s, transform .15s; font-family: var(--fh); display: flex; align-items: flex-start; gap: 12px; }
+  .q-btn:hover { border-color: var(--orange); transform: translateY(-2px); }
+  .q-btn.active { background: var(--navy); border-color: var(--orange); }
+  .q-btn.active .q-text { color: #fff; }
+  .q-badge { min-width: 26px; height: 26px; border-radius: 50%; background: var(--orange); color: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+  .q-text { font-size: 13.5px; color: var(--navy); line-height: 1.5; font-weight: 500; }
+  .q-btn.active .q-badge { background: #fff; color: var(--orange); }
+
+  /* PROMPT ANATOMY */
+  .prompt-box { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.12); border-radius: 12px; overflow: hidden; }
+  .prompt-section { padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,.07); }
+  .prompt-section:last-child { border-bottom: none; }
+  .prompt-tag { font-family: var(--fm); font-size: 8px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px; }
+  .prompt-tag.rol { color: rgba(255,103,27,.8); }
+  .prompt-tag.obj { color: rgba(7,136,168,.8); }
+  .prompt-tag.est { color: rgba(26,158,110,.8); }
+  .prompt-tag.lim { color: rgba(201,79,58,.8); }
+  .prompt-text { font-size: 12px; color: rgba(255,255,255,.8); line-height: 1.5; font-style: italic; }
+
+  /* BEFORE/AFTER */
+  .ba-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .ba-card { border-radius: 10px; padding: 11px 13px; }
+  .ba-card.before { background: rgba(201,79,58,.1); border: 1px solid rgba(201,79,58,.3); }
+  .ba-card.after  { background: rgba(26,158,110,.1); border: 1px solid rgba(26,158,110,.3); }
+  .ba-label { font-family: var(--fm); font-size: 9px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 5px; }
+  .ba-card.before .ba-label { color: rgba(201,79,58,.8); }
+  .ba-card.after  .ba-label { color: rgba(26,158,110,.8); }
+  .ba-text { font-size: 12px; color: rgba(255,255,255,.8); line-height: 1.5; }
+
+  /* FINAL */
+  .s-final { background: var(--cream2); }
+  .final-header { background: var(--navy); padding: 16px var(--pad); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+  .final-header h2 { font-size: 18px; font-weight: 700; color: #fff; }
+
+  /* PROF BAR */
+  #prof-bar { position: fixed; bottom: 0; left: 0; right: 0; height: var(--bar); background: rgba(10,22,40,.97); border-top: 1px solid rgba(255,255,255,.1); display: flex; align-items: center; justify-content: space-between; padding: 0 14px; z-index: 9000; gap: 10px; }
+  .pb-left  { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .pb-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .pb-counter { font-family: var(--fm); font-size: 12px; color: rgba(255,255,255,.5); flex-shrink: 0; }
+  .pb-title { font-size: 12px; color: rgba(255,255,255,.65); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 240px; }
+  #progress-bar { position: fixed; bottom: var(--bar); left: 0; right: 0; height: 3px; background: rgba(255,255,255,.08); z-index: 9001; }
+  #progress-fill { height: 100%; background: var(--orange); transition: width .3s ease; }
+  .btn { font-family: var(--fh); font-size: 12px; font-weight: 600; border: none; border-radius: 6px; padding: 6px 12px; cursor: pointer; transition: opacity .2s; }
+  .btn:hover { opacity: .85; }
+  .btn-nav { background: rgba(255,255,255,.1); color: #fff; padding: 6px 10px; }
+  .btn-primary { background: var(--orange); color: #fff; }
+  .btn-teal { background: var(--teal); color: #fff; }
+
+  /* TIMER */
+  @keyframes slideUp { from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)} }
+  #act-panel { display:none; position:fixed; bottom:calc(var(--bar) + 12px); right:16px; width:280px; z-index:99999; background:#0a1e35; border:1px solid rgba(255,103,27,.35); border-radius:14px; box-shadow:0 8px 32px rgba(0,0,0,.55); overflow:hidden; pointer-events:auto; }
+  #act-panel.show { display:flex !important; flex-direction:column; animation:slideUp .22s ease; }
+  .act-panel-head { background:rgba(255,103,27,.12); border-bottom:1px solid rgba(255,103,27,.2); padding:10px 16px; display:flex; align-items:center; justify-content:space-between; }
+  #act-overlay-name { font-family:var(--fm); font-size:10px; letter-spacing:2px; text-transform:uppercase; color:rgba(255,255,255,.55); }
+  .act-panel-body { padding:16px; display:flex; flex-direction:column; align-items:center; gap:12px; }
+  #act-display { font-family:var(--fm); font-size:58px; font-weight:700; color:#fff; line-height:1; transition:color .3s; letter-spacing:-1px; }
+  #act-display.urgent { color:var(--rose); }
+  #act-progress-track { width:100%; height:3px; background:rgba(255,255,255,.08); border-radius:2px; overflow:hidden; }
+  #act-progress-fill { height:100%; background:var(--orange); border-radius:2px; transition:width .9s linear,background .3s; width:100%; }
+  #act-progress-fill.urgent { background:var(--rose); }
+  .act-btn-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; width:100%; }
+  .act-btn-grid .btn { border-radius:50px; padding:10px 14px; font-size:13px; font-weight:700; }
+  .act-btn-close { grid-column:span 2; background:rgba(255,255,255,.07); color:rgba(255,255,255,.45); font-size:12px; font-weight:500; border-radius:50px; padding:10px 14px; }
+
+  /* VIDEO */
+  #vid-overlay { display:none; position:fixed; inset:0; z-index:99990; background:rgba(5,14,26,.65); backdrop-filter:blur(4px); align-items:center; justify-content:center; }
+  #vid-overlay.show { display:flex; }
+  #vid-modal { background:#0a1628; border-radius:14px; overflow:hidden; box-shadow:0 24px 64px rgba(0,0,0,.7); width:660px; max-width:90vw; }
+  #vid-modal-head { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; }
+  #vid-modal-head.orange-head { background:rgba(255,103,27,.15); border-bottom:1px solid rgba(255,103,27,.25); }
+  #vid-modal-head.teal-head   { background:rgba(7,136,168,.15);  border-bottom:1px solid rgba(7,136,168,.25); }
+  #vid-modal-title { font-family:var(--fm); font-size:10px; letter-spacing:2px; text-transform:uppercase; color:rgba(255,255,255,.6); }
+  #vid-close-btn { background:transparent; border:none; color:rgba(255,255,255,.5); font-size:20px; cursor:pointer; line-height:1; padding:0 4px; transition:color .2s; }
+  #vid-close-btn:hover { color:#fff; }
+  #vid-iframe-wrap { position:relative; width:100%; padding-bottom:56.25%; background:#000; }
+  #vid-iframe-wrap iframe { position:absolute; inset:0; width:100%; height:100%; border:none; }
+</style>
+</head>
+<body>
+<div id="deck">
+
+<!-- ══ SLIDE 0 — PORTADA ══ -->
+<div class="slide s-cover active" data-title="Construir tu primer bot o asistente personalizado">
+  <div class="cover-left">
+    <span class="cover-eyebrow anim-1">Automatización e IA Sin Código · IA Aplicada · Sesión 3</span>
+    <h1 class="cover-title anim-2">Construir tu primer<br><em>bot o asistente</em><br>personalizado</h1>
+    <p class="cover-objective anim-3">Al finalizar la sesión, serás capaz de redactar un system prompt de alta calidad y configurar un asistente profesional en Gemini Gems — robusto ante distintas entradas y compartible con un enlace — para un caso de uso específico de tu trabajo o estudio.</p>
+    <div class="cover-tags anim-4">
+      <span class="cover-tag">⏱ 120 minutos</span>
+      <span class="cover-tag">🛠 Gemini Gems (gratuito)</span>
+      <span class="cover-tag">📤 Asistente publicado con enlace compartible</span>
+    </div>
+  </div>
+  <div class="cover-right">
+    <div class="plan-label anim-1">Plan de sesión</div>
+    <div class="plan-phase anim-2">Apertura</div>
+    <div class="plan-item b1 anim-2"><span class="plan-time">5'</span><span class="plan-text">Bienvenida y portada</span></div>
+    <div class="plan-item b1 anim-2"><span class="plan-time">15'</span><span class="plan-text">Activación: asistentes que ya usas</span></div>
+    <div class="plan-phase anim-3">Bloque 1 — Diseñar</div>
+    <div class="plan-item b1 anim-3"><span class="plan-time">8'</span><span class="plan-text">Video + transición</span></div>
+    <div class="plan-item b1 anim-3"><span class="plan-time">15'</span><span class="plan-text">Actividad 1: Redacta tu system prompt</span></div>
+    <div class="plan-item b1 anim-4"><span class="plan-time">20'</span><span class="plan-text">Cierre Bloque 1 — puesta en común</span></div>
+    <div class="plan-phase anim-4">Bloque 2 — Construir y compartir</div>
+    <div class="plan-item b2 anim-5"><span class="plan-time">7'</span><span class="plan-text">Transición + exploración Gemini Gems</span></div>
+    <div class="plan-item b2 anim-5"><span class="plan-time">15'</span><span class="plan-text">Actividad 2: Configura y comparte</span></div>
+    <div class="plan-item b2 anim-5"><span class="plan-time">20'</span><span class="plan-text">Cierre Bloque 2 — prueba cruzada</span></div>
+    <div class="plan-item done anim-6"><span class="plan-time">15'</span><span class="plan-text">Cierre final</span></div>
+  </div>
+</div>
+
+<!-- ══ SLIDE 1 — ACTIVACIÓN ══ -->
+<div class="slide s-cream" data-title="Activación — Asistentes que ya usas">
+  <div class="cream-header">
+    <span class="cream-header-title">Activación — Asistentes que ya usas</span>
+    <span class="cream-header-badge">⏱ 15 min</span>
+  </div>
+  <div style="flex:1;display:flex;gap:0;align-items:stretch;overflow:hidden;">
+    <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:10px;padding:14px 32px 14px 48px;">
+      <button class="q-btn anim-2" onclick="activateQ(this)">
+        <div class="q-badge">1</div>
+        <div class="q-text">¿Usas Siri, Alexa, Google Assistant o algún chatbot en tu trabajo o vida diaria? ¿Para qué lo usas? ¿Qué funciona bien y qué no?</div>
+      </button>
+      <button class="q-btn anim-3" onclick="activateQ(this)">
+        <div class="q-badge">2</div>
+        <div class="q-text">Si pudieras diseñar un asistente desde cero para una tarea de tu trabajo — uno que otros de tu equipo también pudieran usar — ¿qué haría exactamente?</div>
+      </button>
+      <button class="q-btn anim-4" onclick="activateQ(this)">
+        <div class="q-badge">3</div>
+        <div class="q-text">¿Has notado que la misma IA responde de forma muy diferente según cómo le preguntas? ¿Qué diferencia hace la forma en que escribes la instrucción?</div>
+      </button>
+      <button class="q-btn anim-5" onclick="activateQ(this)">
+        <div class="q-badge">4</div>
+        <div class="q-text">¿Qué tendría que hacer un asistente para que lo usaras todos los días, sin pensarlo? ¿Qué lo hace indispensable versus útil-pero-opcional?</div>
+      </button>
+      <div style="background:rgba(255,103,27,.08);border:1px solid rgba(255,103,27,.2);border-radius:10px;padding:9px 14px;font-size:13px;color:var(--navy);margin-top:2px;" class="anim-6">
+        → Comparte tu respuesta.
+      </div>
+    </div>
+    <div style="width:320px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-left:1px solid rgba(0,0,0,.07);padding:16px;" class="anim-fade">
+      <div style="display:flex;flex-direction:column;gap:10px;width:288px;">
+        <div style="font-family:var(--fm);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--orange);margin-bottom:2px;">Lo que harás hoy</div>
+        <div style="background:#fff;border:1.5px solid rgba(255,103,27,.3);border-radius:12px;padding:13px;">
+          <div style="font-size:11px;font-weight:700;color:var(--orange);margin-bottom:4px;">Redactar el system prompt</div>
+          <div style="font-size:12px;color:#3a4a5c;line-height:1.5;">Diseñarás las instrucciones de un asistente profesional — con rol, objetivo, estructura de respuesta y límites explícitos.</div>
+        </div>
+        <div style="background:#fff;border:1.5px solid rgba(7,136,168,.3);border-radius:12px;padding:13px;">
+          <div style="font-size:11px;font-weight:700;color:var(--teal);margin-bottom:4px;">Configurar en Gemini Gems</div>
+          <div style="font-size:12px;color:#3a4a5c;line-height:1.5;">Llevarás el system prompt a Gemini Gems — gratuito con cuenta de Google — y lo probarás con una solicitud real.</div>
+        </div>
+        <div style="background:#fff;border:1.5px solid rgba(26,158,110,.3);border-radius:12px;padding:13px;">
+          <div style="font-size:11px;font-weight:700;color:var(--sage);margin-bottom:4px;">Compartir y probar en grupo</div>
+          <div style="font-size:12px;color:#3a4a5c;line-height:1.5;">Intercambiarás el enlace de tu asistente con compañeros. Alguien más lo usará — eso revelará qué funciona y qué ajustar.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SLIDE 2 — TRANSICIÓN BLOQUE 1 ══ -->
+<div class="slide s-trans s-trans-navy" data-title="Bloque 1 — Diseñar el system prompt">
+  <div style="flex:1;display:flex;flex-direction:row;overflow:hidden;">
+    <div class="trans-inner" style="flex:1;">
+      <div class="trans-fase anim-1">Bloque 1</div>
+      <div class="trans-name anim-2">Diseñar el<br><em>system prompt</em></div>
+      <div class="trans-purpose anim-3">Un asistente que otros van a usar necesita instrucciones más cuidadosas que uno personal. Hoy aprenderás a redactar un system prompt de alta calidad: preciso en el rol, claro en los límites y robusto ante entradas inesperadas. La diferencia entre un asistente mediocre y uno indispensable está en la calidad del prompt.</div>
+
+      <div style="margin-top:14px;font-family:var(--fm);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.45);" class="anim-5">Video de apoyo:</div>
+      <div class="vid-btn-wrap anim-5">
+        <button class="vid-btn vid-btn-orange" onclick="openVideo('qcV7B_NxnUs','orange','Why you should start arguing with AI · Sonia Jalfin · TEDxRíodelaPlata GIS')">
+          <span class="vid-btn-icon">▶</span>
+          <span class="vid-btn-label">
+            <span class="vid-btn-title">Why you should start arguing with AI</span>
+            <span class="vid-btn-sub">Sonia Jalfin · TEDxRíodelaPlata GIS · 2026</span>
+          </span>
+        </button>
+        <div class="vid-tooltip">Sonia Jalfin demuestra cómo un bot configurado con el rol de "antagonista leal" produce resultados radicalmente distintos a una IA genérica. El caso concreto conecta directamente con el propósito del Bloque 1: que el estudiante entienda por qué el diseño cuidadoso de las instrucciones hace toda la diferencia.</div>
+      </div>
+    </div>
+    <div style="width:330px;flex-shrink:0;display:flex;flex-direction:column;justify-content:center;padding:20px;gap:12px;" class="anim-fade">
+      <div style="font-family:var(--fm);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--orange);margin-bottom:4px;">Anatomía de un system prompt de calidad</div>
+      <div class="prompt-box">
+        <div class="prompt-section">
+          <div class="prompt-tag rol">ROL</div>
+          <div class="prompt-text">"Eres un asistente especializado en redacción de propuestas comerciales para empresas de servicios B2B en Latinoamérica."</div>
+        </div>
+        <div class="prompt-section">
+          <div class="prompt-tag obj">OBJETIVO Y TONO</div>
+          <div class="prompt-text">"Tu objetivo es ayudar a redactar propuestas claras, profesionales y persuasivas. Usa tono formal pero cercano."</div>
+        </div>
+        <div class="prompt-section">
+          <div class="prompt-tag est">ESTRUCTURA DE RESPUESTA</div>
+          <div class="prompt-text">"Siempre entrega: resumen ejecutivo (3 líneas) + propuesta completa + llamada a la acción."</div>
+        </div>
+        <div class="prompt-section">
+          <div class="prompt-tag lim">LÍMITES</div>
+          <div class="prompt-text">"Si no tienes suficiente información del cliente, pide los datos antes de redactar. No inventes precios ni fechas."</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="trans-big">1</div>
+</div>
+
+<!-- ══ SLIDE 3 — ACTIVIDAD 1 ══ -->
+<div class="slide s-activity" data-title="Actividad 1 — Redacta tu system prompt">
+  <div class="act-header">
+    <div class="act-num-bg">1</div>
+    <span class="act-eyebrow anim-1">Actividad 1 · Bloque 1 · 15 min</span>
+  </div>
+  <div class="act-title anim-2">Redacta tu system prompt — Diseña un asistente que otros puedan usar</div>
+  <div class="act-body">
+    <div class="act-content">
+      <div class="act-instruction anim-3">Elige un caso de uso profesional específico y redacta el system prompt completo. Debe ser lo suficientemente claro para que alguien que no lo diseñó pueda usarlo y obtener resultados consistentes.</div>
+      <div class="act-steps anim-4">
+        <div class="act-step">
+          <div class="step-num" style="background:var(--orange);">1</div>
+          <div><strong style="color:rgba(255,255,255,.95);">Define el caso de uso:</strong> ¿Para qué situación profesional sirve este asistente? Sé específico — no "ayudar con correos" sino "redactar correos de seguimiento a clientes después de una reunión comercial".</div>
+        </div>
+        <div class="act-step">
+          <div class="step-num" style="background:var(--teal);">2</div>
+          <div><strong style="color:rgba(255,255,255,.95);">Escribe los cuatro componentes:</strong> Rol · Objetivo y tono · Estructura de respuesta · Límites del asistente. Usa el modelo de la diapositiva anterior como referencia.</div>
+        </div>
+        <div class="act-step">
+          <div class="step-num" style="background:var(--sage);">3</div>
+          <div><strong style="color:rgba(255,255,255,.95);">Prueba mentalmente con dos casos adversos:</strong> ¿Qué pasa si alguien le pide algo fuera de su alcance? ¿Qué pasa si la instrucción del usuario es muy vaga? Ajusta los límites si es necesario.</div>
+        </div>
+        <div class="act-step">
+          <div class="step-num" style="background:rgba(255,255,255,.2);">4</div>
+          <div><strong style="color:rgba(255,255,255,.95);">Criterio de calidad:</strong> Alguien de tu equipo debería poder usar este asistente sin que tú le expliques nada — solo con el system prompt.</div>
+        </div>
+      </div>
+      <div style="background:rgba(26,158,110,.1);border:1px solid rgba(26,158,110,.3);border-radius:8px;padding:8px 14px;font-size:13px;color:rgba(255,255,255,.75);margin-top:4px;" class="anim-5">→ Este system prompt es lo que pegarás en Gemini Gems en la Actividad 2. Guárdalo con cuidado.</div>
+    </div>
+    <div style="width:210px;flex-shrink:0;display:flex;flex-direction:column;gap:10px;justify-content:center;" class="anim-fade">
+      <div style="font-family:var(--fm);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--orange);text-align:center;margin-bottom:2px;">Ideas de asistentes</div>
+      <div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:11px 12px;display:flex;flex-direction:column;gap:8px;">
+        <div style="font-size:12px;color:rgba(255,255,255,.85);border-bottom:1px solid rgba(255,255,255,.08);padding-bottom:7px;">📋 <strong>Asistente de propuestas</strong><br><span style="color:rgba(255,255,255,.5);font-size:11px;">Redacta propuestas comerciales con estructura definida</span></div>
+        <div style="font-size:12px;color:rgba(255,255,255,.85);border-bottom:1px solid rgba(255,255,255,.08);padding-bottom:7px;">🎓 <strong>Tutor de materia</strong><br><span style="color:rgba(255,255,255,.5);font-size:11px;">Explica conceptos de una disciplina específica</span></div>
+        <div style="font-size:12px;color:rgba(255,255,255,.85);border-bottom:1px solid rgba(255,255,255,.08);padding-bottom:7px;">📊 <strong>Analista de feedback</strong><br><span style="color:rgba(255,255,255,.5);font-size:11px;">Resume y clasifica retroalimentación de clientes o equipos</span></div>
+        <div style="font-size:12px;color:rgba(255,255,255,.85);">🗓 <strong>Asistente de reuniones</strong><br><span style="color:rgba(255,255,255,.5);font-size:11px;">Convierte notas en minutas estructuradas con acciones</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="meta-bar">
+    <div class="meta-card time-card">
+      <div style="display:flex;flex-direction:column;gap:2px;">
+        <div class="meta-label">⏱ Tiempo</div>
+        <div class="meta-value big">15 min</div>
+        <div class="meta-sub">Individual · comienza aquí</div>
+      </div>
+    </div>
+    <div class="meta-card">
+      <div class="meta-text-group">
+        <div class="meta-label">👥 Modalidad</div>
+        <div class="meta-value">Individual</div>
+        <div class="meta-sub">Diseño propio</div>
+      </div>
+    </div>
+    <div class="meta-card">
+      <div class="meta-text-group">
+        <div class="meta-label">🛠 Herramienta</div>
+        <div class="meta-value">Notas personales</div>
+        <div class="meta-sub">Papel, documento o cuaderno</div>
+      </div>
+    </div>
+    <div class="meta-card sage">
+      <div class="meta-text-group">
+        <div class="meta-label">📤 Producto</div>
+        <div class="meta-value">System prompt completo</div>
+        <div class="meta-sub">Rol · Objetivo · Estructura · Límites</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SLIDE 4 — CIERRE BLOQUE 1 ══ -->
+<div class="slide s-cream" data-title="Cierre Bloque 1 — Puesta en común">
+  <div class="cream-header">
+    <span class="cream-header-title">Cierre Bloque 1 — Puesta en común</span>
+    <span class="cream-header-badge">⏱ 20 min · El profesor facilita la revisión</span>
+  </div>
+  <div style="flex:1;display:flex;gap:16px;overflow:hidden;padding:14px 48px 14px;">
+    <div style="flex:1;display:flex;flex-direction:column;gap:9px;justify-content:center;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;" class="anim-2">
+        <div class="close-card">
+          <div class="close-card-title">¿Quién es el usuario de este asistente — tú mismo o alguien más?</div>
+        </div>
+        <div class="close-card">
+          <div class="close-card-title">¿Los límites del asistente están escritos o son implícitos?</div>
+        </div>
+        <div class="close-card">
+          <div class="close-card-title">¿Qué pasaría si alguien le pide algo que está fuera de su alcance?</div>
+        </div>
+        <div class="close-card">
+          <div class="close-card-title">¿La estructura de respuesta es siempre la misma o depende de la solicitud?</div>
+        </div>
+      </div>
+      <div class="close-card navy anim-3" style="margin-top:2px;">
+        <div class="close-card-title">¿Qué información necesitaría saber alguien de tu equipo para usar este asistente sin que tú le expliques nada?</div>
+      </div>
+    </div>
+    <div style="width:220px;flex-shrink:0;display:flex;flex-direction:column;gap:9px;justify-content:center;" class="anim-fade">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--orange);text-align:center;margin-bottom:2px;">Criterios de revisión</div>
+      <div class="close-card">
+        <div class="criteria-list">
+          <div class="criteria-item" onclick="toggleCheck(this)"><span class="criteria-check">✓</span><span>El rol define una especialidad concreta, no genérica.</span></div>
+          <div class="criteria-item" onclick="toggleCheck(this)"><span class="criteria-check">✓</span><span>El tono y el objetivo están especificados.</span></div>
+          <div class="criteria-item" onclick="toggleCheck(this)"><span class="criteria-check">✓</span><span>La estructura de respuesta es predecible y verificable.</span></div>
+          <div class="criteria-item" onclick="toggleCheck(this)"><span class="criteria-check">✓</span><span>Los límites están escritos explícitamente.</span></div>
+          <div class="criteria-item" onclick="toggleCheck(this)"><span class="criteria-check">✓</span><span>Otro usuario podría usarlo sin explicaciones adicionales.</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SLIDE 5 — TRANSICIÓN BLOQUE 2 ══ -->
+<div class="slide s-trans s-trans-navy" data-title="Bloque 2 — Configurar y compartir">
+  <div style="flex:1;display:flex;flex-direction:row;overflow:hidden;">
+    <div class="trans-inner" style="flex:1;">
+      <div class="trans-fase anim-1">Bloque 2</div>
+      <div class="trans-name anim-2">Configurar<br><em>y compartir</em></div>
+      <div class="trans-purpose anim-3">Con el system prompt listo, lo llevas a Gemini Gems. Crearás el asistente, lo probarás con una solicitud propia y compartirás el enlace con tu grupo. Cada quien usará el asistente de otro — eso revelará exactamente qué funciona y qué necesita ajuste.</div>
+      <div style="margin-top:14px;font-family:var(--fm);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.45);">Video de apoyo:</div>
+      <div class="vid-btn-wrap anim-5" style="margin-top:6px;">
+        <button class="vid-btn vid-btn-teal" onclick="openVideo('szshQdO10Lw','teal','Create a custom AI advisor Gem · Google Workspace oficial')">
+          <span class="vid-btn-icon">▶</span>
+          <span class="vid-btn-label">
+            <span class="vid-btn-title">Create a custom AI advisor Gem</span>
+            <span class="vid-btn-sub">Google Workspace · Canal oficial · Subtítulos en español</span>
+          </span>
+        </button>
+        <div class="vid-tooltip">Video oficial de Google Workspace que muestra cómo configurar un Gem con rol de asesor de estrategia y liderazgo — exactamente el tipo de asistente que el estudiante va a construir en la Actividad 2. Los estudiantes ven la interfaz real de Gemini Gems antes de abrirla.</div>
+      </div>
+    </div>
+    <div style="width:330px;flex-shrink:0;display:flex;flex-direction:column;justify-content:center;padding:20px;gap:12px;" class="anim-fade">
+      <div style="font-family:var(--fm);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--orange);margin-bottom:6px;">Un system prompt hace la diferencia</div>
+      <div class="ba-grid">
+        <div class="ba-card before">
+          <div class="ba-label">Sin system prompt</div>
+          <div class="ba-text">Respuestas genéricas, tono variable, formato impredecible. El usuario debe dar instrucciones en cada chat.</div>
+        </div>
+        <div class="ba-card after">
+          <div class="ba-label">Con system prompt</div>
+          <div class="ba-text">Respuestas consistentes, tono definido, estructura siempre igual. El usuario solo da la tarea.</div>
+        </div>
+      </div>
+      <div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px 12px;">
+        <div style="font-family:var(--fm);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:5px;">Gemini Gems — plan gratuito</div>
+        <div style="font-size:12px;color:rgba(255,255,255,.7);line-height:1.5;">Crear Gems · Instrucciones de sistema · Compartir con enlace o por correo · Sin tarjeta de crédito</div>
+      </div>
+    </div>
+  </div>
+  <div class="trans-big">2</div>
+</div>
+
+<!-- ══ SLIDE 6 — ACTIVIDAD 2 ══ -->
+<div class="slide s-activity" data-title="Actividad 2 — Configura tu asistente en Gemini Gems">
+  <div class="act-header">
+    <div class="act-num-bg">2</div>
+    <span class="act-eyebrow anim-1">Actividad 2 · Bloque 2 · 15 min</span>
+  </div>
+  <div class="act-title anim-2">Configura, prueba e intercambia — Lleva el system prompt a Gemini Gems y compártelo en tu sala</div>
+  <div class="act-body">
+    <div class="act-content">
+      <div class="act-instruction anim-3">Trabaja en tu sala de grupos. Cada quien configura su propio Gem de forma individual. Al terminar, intercambian enlaces dentro del grupo y cada uno usa el asistente de otro compañero con una solicitud real.</div>
+      <div class="act-steps anim-4">
+        <div class="act-step">
+          <div class="step-num">1</div>
+          <div><strong style="color:rgba(255,255,255,.95);">Crea el Gem</strong> con un nombre descriptivo y específico — reconocible para cualquier usuario sin explicación adicional.</div>
+        </div>
+        <div class="act-step">
+          <div class="step-num">2</div>
+          <div><strong style="color:rgba(255,255,255,.95);">Pega el system prompt</strong> completo: Rol, Objetivo, Estructura de respuesta y Límites. Verifica que estén los cuatro componentes antes de guardar.</div>
+        </div>
+        <div class="act-step">
+          <div class="step-num">3</div>
+          <div><strong style="color:rgba(255,255,255,.95);">Prueba con una solicitud propia</strong> y ajusta si el resultado no tiene el tono o el formato que diseñaste. Luego genera el enlace compartible.</div>
+        </div>
+        <div class="act-step">
+          <div class="step-num">4</div>
+          <div><strong style="color:rgba(255,255,255,.95);">Intercambia el enlace</strong> con un compañero de la sala. Usa su asistente con una solicitud real — sin leer el system prompt primero. Anota qué funcionó y qué no.</div>
+        </div>
+      </div>
+      <div style="background:rgba(255,103,27,.1);border:1px solid rgba(255,103,27,.25);border-radius:8px;padding:8px 14px;font-size:12.5px;color:rgba(255,255,255,.75);margin-top:3px;" class="anim-5">→ Si no alcanzas a hacer el intercambio, guarda el Gem y toma una captura. Puedes continuar refinando el system prompt después de la sesión.</div>
+    </div>
+    <div style="width:210px;flex-shrink:0;display:flex;flex-direction:column;gap:10px;justify-content:center;" class="anim-fade">
+      <div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:12px;">
+        <div style="font-family:var(--fm);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:8px;">¿El resultado no convence?</div>
+        <div style="display:flex;flex-direction:column;gap:8px;text-align:left;">
+          <div style="font-size:12px;color:rgba(255,255,255,.8);border-bottom:1px solid rgba(255,255,255,.07);padding-bottom:6px;">🎭 <strong style="color:#fff;">Tono incorrecto</strong><br><span style="color:rgba(255,255,255,.5);">Especifica el tono con más detalle en el system prompt.</span></div>
+          <div style="font-size:12px;color:rgba(255,255,255,.8);border-bottom:1px solid rgba(255,255,255,.07);padding-bottom:6px;">📐 <strong style="color:#fff;">Formato variable</strong><br><span style="color:rgba(255,255,255,.5);">Agrega la estructura exacta de respuesta con un ejemplo.</span></div>
+          <div style="font-size:12px;color:rgba(255,255,255,.8);">🚧 <strong style="color:#fff;">Fuera de límites</strong><br><span style="color:rgba(255,255,255,.5);">Escribe explícitamente qué debe hacer cuando no puede ayudar.</span></div>
+        </div>
+      </div>
+      <div style="background:rgba(26,158,110,.1);border:1px solid rgba(26,158,110,.3);border-radius:10px;padding:10px 12px;">
+        <div style="font-family:var(--fm);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:#1a9e6e;margin-bottom:4px;">Al regresar al pleno</div>
+        <div style="font-size:12px;color:rgba(255,255,255,.75);line-height:1.5;">Trae un hallazgo concreto: qué parte del system prompt funcionó para el usuario externo y qué necesitaría ajuste.</div>
+      </div>
+    </div>
+  </div>
+  <div class="meta-bar">
+    <div class="meta-card time-card">
+      <div style="display:flex;flex-direction:column;gap:2px;">
+        <div class="meta-label">⏱ Tiempo</div>
+        <div class="meta-value big">15 min</div>
+        <div class="meta-sub">En sala · inicia al entrar</div>
+      </div>
+    </div>
+    <div class="meta-card">
+      <div class="meta-text-group">
+        <div class="meta-label">👥 Modalidad</div>
+        <div class="meta-value">Sala de trabajo</div>
+        <div class="meta-sub">Grupos de 3 o 4 personas</div>
+      </div>
+    </div>
+    <div class="meta-card">
+      <div class="meta-text-group">
+        <div class="meta-label">🛠 Herramienta</div>
+        <div class="meta-value">Gemini Gems</div>
+        <div class="meta-sub">gemini.google.com (plan gratuito)</div>
+      </div>
+    </div>
+    <div class="meta-card sage">
+      <div class="meta-text-group">
+        <div class="meta-label">📤 Producto</div>
+        <div class="meta-value">Gem configurado + hallazgo de prueba cruzada</div>
+        <div class="meta-sub">Qué funcionó y qué ajustarías del system prompt</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SLIDE 7 — CIERRE BLOQUE 2 ══ -->
+<div class="slide s-cream" data-title="Cierre Bloque 2 — Prueba cruzada">
+  <div class="cream-header">
+    <span class="cream-header-title">Cierre Bloque 2 — Hallazgos de la prueba cruzada</span>
+    <span class="cream-header-badge">⏱ 20 min · Puesta en común en pleno</span>
+  </div>
+  <div style="flex:1;display:flex;gap:16px;overflow:hidden;padding:14px 48px 14px;">
+    <div style="flex:1;display:flex;flex-direction:column;gap:9px;justify-content:center;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;" class="anim-2">
+        <div class="close-card">
+          <div class="close-card-title">¿El resultado fue lo que esperabas al usar el asistente de otro sin conocer sus instrucciones?</div>
+        </div>
+        <div class="close-card">
+          <div class="close-card-title">¿Tu compañero obtuvo el resultado que tenías en mente cuando diseñaste el asistente?</div>
+        </div>
+        <div class="close-card">
+          <div class="close-card-title">¿Qué parte del system prompt funcionó sin explicación y cuál requería contexto adicional?</div>
+        </div>
+        <div class="close-card">
+          <div class="close-card-title">¿Quién en tu equipo o entorno podría usar este asistente hoy mismo?</div>
+        </div>
+      </div>
+      <div class="close-card navy anim-3" style="margin-top:2px;">
+        <div class="close-card-title">¿Qué aprendiste sobre cómo diseñar instrucciones para otros — no solo para ti mismo?</div>
+      </div>
+    </div>
+    <div style="width:220px;flex-shrink:0;display:flex;flex-direction:column;gap:9px;justify-content:center;" class="anim-fade">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--orange);text-align:center;margin-bottom:2px;">Criterios de revisión</div>
+      <div class="close-card">
+        <div class="criteria-list">
+          <div class="criteria-item" onclick="toggleCheck(this)"><span class="criteria-check">✓</span><span>El Gem está configurado con instrucciones completas.</span></div>
+          <div class="criteria-item" onclick="toggleCheck(this)"><span class="criteria-check">✓</span><span>Se generó y compartió el enlace del Gem.</span></div>
+          <div class="criteria-item" onclick="toggleCheck(this)"><span class="criteria-check">✓</span><span>El asistente funcionó para el usuario externo sin explicaciones.</span></div>
+          <div class="criteria-item" onclick="toggleCheck(this)"><span class="criteria-check">✓</span><span>Se identificó al menos un ajuste concreto al system prompt.</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SLIDE 8 — CIERRE FINAL ══ -->
+<div class="slide s-final" data-title="Cierre final — Lo que construiste hoy">
+  <div class="final-header">
+    <h2>Cierre final — Lo que construiste hoy</h2>
+    <span style="font-family:var(--fm);font-size:12px;background:var(--sage);color:#fff;border-radius:20px;padding:4px 14px;">⏱ 15 min</span>
+  </div>
+  <div style="flex:1;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;padding:14px 14px 14px;overflow:hidden;">
+    <div class="anim-1" style="background:#fff;border-radius:14px;border:1px solid rgba(0,0,0,.07);padding:24px 20px;display:flex;flex-direction:column;gap:14px;">
+      <div style="width:44px;height:44px;border-radius:10px;background:rgba(255,103,27,.1);border:1.5px solid rgba(255,103,27,.2);display:flex;align-items:center;justify-content:center;font-size:22px;">📝</div>
+      <div>
+        <div style="font-family:var(--fm);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--orange);margin-bottom:8px;">Producto 1</div>
+        <div style="font-size:16px;font-weight:700;color:var(--navy);line-height:1.2;margin-bottom:10px;">System prompt de alta calidad</div>
+        <div style="font-size:13px;color:#4a5568;line-height:1.6;">Diseñaste un prompt con rol, objetivo, estructura de respuesta y límites — reutilizable en cualquier plataforma de IA.</div>
+      </div>
+    </div>
+    <div class="anim-2" style="background:#fff;border-radius:14px;border:1px solid rgba(0,0,0,.07);padding:24px 20px;display:flex;flex-direction:column;gap:14px;">
+      <div style="width:44px;height:44px;border-radius:10px;background:rgba(7,136,168,.1);border:1.5px solid rgba(7,136,168,.2);display:flex;align-items:center;justify-content:center;font-size:22px;">🤖</div>
+      <div>
+        <div style="font-family:var(--fm);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--orange);margin-bottom:8px;">Producto 2</div>
+        <div style="font-size:16px;font-weight:700;color:var(--navy);line-height:1.2;margin-bottom:10px;">Asistente publicado en Gemini Gems</div>
+        <div style="font-size:13px;color:#4a5568;line-height:1.6;">Configuraste y compartiste tu asistente con un enlace. Ya fue probado por otro usuario y ajustado con base en los resultados.</div>
+      </div>
+    </div>
+    <div class="anim-3" style="background:var(--navy);border-radius:14px;padding:24px 20px;display:flex;flex-direction:column;gap:14px;">
+      <div style="width:44px;height:44px;border-radius:10px;background:rgba(255,103,27,.2);border:1.5px solid rgba(255,103,27,.4);display:flex;align-items:center;justify-content:center;font-size:22px;">🚀</div>
+      <div>
+        <div style="font-family:var(--fm);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--orange);margin-bottom:8px;">Acción esta semana</div>
+        <div style="font-size:16px;font-weight:700;color:#fff;line-height:1.2;margin-bottom:10px;">Compártelo con alguien de tu equipo</div>
+        <div style="font-size:13px;color:rgba(255,255,255,.75);line-height:1.6;">Envía el enlace a un colega o compañero. Observa cómo lo usa y qué ajuste necesita el system prompt para funcionar mejor para esa persona.</div>
+      </div>
+    </div>
+    <div class="anim-4" style="background:#fff;border-radius:14px;border:2px solid var(--orange);padding:24px 20px;display:flex;flex-direction:column;gap:14px;">
+      <div style="width:44px;height:44px;border-radius:10px;background:rgba(255,103,27,.1);border:1.5px solid rgba(255,103,27,.3);display:flex;align-items:center;justify-content:center;font-size:22px;">💬</div>
+      <div>
+        <div style="font-family:var(--fm);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--orange);margin-bottom:8px;">Pregunta de cierre</div>
+        <div style="font-size:16px;font-weight:700;color:var(--navy);line-height:1.2;margin-bottom:10px;">¿Qué aprendiste sobre cómo diseñar para otros — no solo para ti?</div>
+        <div style="font-size:13px;color:#4a5568;line-height:1.6;">Comparte tu respuesta.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /deck -->
+
+<!-- BARRA DEL PROFESOR -->
+<div id="progress-bar"><div id="progress-fill" style="width:11.11%"></div></div>
+<div id="prof-bar">
+  <div class="pb-left">
+    <div style="display:flex;align-items:baseline;line-height:1;flex-shrink:0;margin-right:4px;"><span style="font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:400;color:#ffffff;letter-spacing:-.2px;">Universidad</span><span style="font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;color:#ff671b;letter-spacing:-.2px;">Uk</span></div>
+    <span class="pb-counter" id="pbCounter">1 / 9</span>
+    <span class="pb-title" id="pbTitle">Construir tu primer bot o asistente personalizado</span>
+  </div>
+  <div class="pb-right">
+    <button class="btn btn-teal" onclick="toggleActPanel()">⏱ Actividad</button>
+    <button class="btn btn-nav" onclick="navigate(-1)">◀</button>
+    <button class="btn btn-nav" onclick="navigate(1)">▶</button>
+  </div>
+</div>
+
+<!-- TIMER PANEL -->
+<div id="act-panel">
+  <div class="act-panel-head">
+    <span id="act-overlay-name">Actividad</span>
+    <button class="btn" onclick="toggleActPanel()" style="background:transparent;color:rgba(255,255,255,.5);font-size:14px;padding:0;">✕</button>
+  </div>
+  <div class="act-panel-body">
+    <div id="act-display">15:00</div>
+    <div id="act-progress-track"><div id="act-progress-fill"></div></div>
+    <div class="act-btn-grid">
+      <button class="btn btn-primary" id="btnStartAct" onclick="startAct()">Iniciar</button>
+      <button class="btn" id="btnPauseAct" onclick="pauseAct()" style="display:none;background:var(--orange);color:#fff;">Pausar</button>
+      <button class="btn btn-teal" id="btnResumeAct" onclick="resumeAct()" style="display:none;">Reanudar</button>
+      <button class="btn" onclick="resetAct()" style="background:rgba(255,255,255,.15);color:#fff;">Reiniciar</button>
+    </div>
+    <button class="btn act-btn-close" onclick="toggleActPanel()">Cerrar panel</button>
+  </div>
+</div>
+
+<!-- VIDEO OVERLAY -->
+<div id="vid-overlay" onclick="closeVideoIfBackdrop(event)">
+  <div id="vid-modal">
+    <div id="vid-modal-head" class="orange-head">
+      <span id="vid-modal-title">VIDEO</span>
+      <button id="vid-close-btn" onclick="closeVideo()">✕</button>
+    </div>
+    <div id="vid-iframe-wrap"></div>
+  </div>
+</div>
+
+<script>
+var audioCtx=null;
+function getCtx(){ if(!audioCtx) audioCtx=new(window.AudioContext||window.webkitAudioContext)(); return audioCtx; }
+function playClick(){
+  try{
+    var c=getCtx(),t=c.currentTime;
+    function clickTransient(st,vol){
+      var bufSize=Math.floor(c.sampleRate*.012),buf=c.createBuffer(1,bufSize,c.sampleRate),data=buf.getChannelData(0);
+      for(var i=0;i<bufSize;i++) data[i]=(Math.random()*2-1)*Math.pow(1-i/bufSize,6);
+      var src=c.createBufferSource(); src.buffer=buf;
+      var hp=c.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=1800; hp.Q.value=0.8;
+      var lp=c.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=7000; lp.Q.value=0.5;
+      var g=c.createGain(); g.gain.setValueAtTime(vol,st); g.gain.exponentialRampToValueAtTime(0.0001,st+.012);
+      src.connect(hp); hp.connect(lp); lp.connect(g); g.connect(c.destination);
+      src.start(st); src.stop(st+.015);
+    }
+    clickTransient(t,.55); clickTransient(t+.028,.35);
+  }catch(e){}
+}
+function beep(f,d,v,t){ try{ var c=getCtx(),o=c.createOscillator(),g=c.createGain(); o.connect(g); g.connect(c.destination); o.type=t||'sine'; o.frequency.setValueAtTime(f,c.currentTime); g.gain.setValueAtTime(v||0.3,c.currentTime); g.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+d); o.start(c.currentTime); o.stop(c.currentTime+d); }catch(e){} }
+function playTickSequence(){ beep(880,.07,.2,'sine'); }
+function playWarning(){ beep(660,.15,.35,'sine'); setTimeout(()=>beep(440,.25,.35,'sine'),200); }
+function playFinished(){ [0,200,400].forEach(d=>setTimeout(()=>beep(880,.12,.4,'sine'),d)); }
+
+var slides=document.querySelectorAll('.slide');
+var total=slides.length;
+var current=0;
+var slideTitles=Array.from(slides).map(s=>s.dataset.title||'');
+var actNames={ 3:'Actividad 1 — Redacta tu system prompt', 6:'Actividad 2 — Configura tu asistente en Gemini Gems' };
+var actPresets={ 3:900, 4:900, 6:900, 7:900 };
+
+function activateQ(btn){ document.querySelectorAll('.q-btn').forEach(b=>b.classList.remove('active')); btn.classList.toggle('active'); }
+function toggleCheck(item){ item.querySelector('.criteria-check').classList.toggle('checked'); item.classList.toggle('checked-item'); }
+
+function openVideo(id,color,label){
+  var overlay=document.getElementById('vid-overlay'),wrap=document.getElementById('vid-iframe-wrap'),head=document.getElementById('vid-modal-head'),title=document.getElementById('vid-modal-title');
+  var old=document.getElementById('vid-iframe'); if(old)old.remove();
+  var iframe=document.createElement('iframe'); iframe.id='vid-iframe';
+  iframe.src='https://www.youtube.com/embed/'+id+'?autoplay=1';
+  iframe.title=label; iframe.frameBorder='0'; iframe.allow='accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture'; iframe.allowFullscreen=true;
+  iframe.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:none;';
+  wrap.appendChild(iframe); head.className=(color==='teal')?'teal-head':'orange-head'; title.textContent=label; overlay.classList.add('show');
+}
+function closeVideo(){ document.getElementById('vid-overlay').classList.remove('show'); var f=document.getElementById('vid-iframe'); if(f)f.src=''; }
+function closeVideoIfBackdrop(e){ if(e.target===document.getElementById('vid-overlay'))closeVideo(); }
+document.addEventListener('keydown',function(e){ if(e.code==='Escape'){ var ov=document.getElementById('vid-overlay'); if(ov&&ov.classList.contains('show')){ closeVideo(); e.stopPropagation(); } }},true);
+
+function goTo(i){
+  slides[current].classList.remove('active');
+  current=Math.max(0,Math.min(total-1,i));
+  slides[current].classList.add('active');
+  document.getElementById('pbCounter').textContent=(current+1)+' / '+total;
+  document.getElementById('pbTitle').textContent=slideTitles[current];
+  document.getElementById('progress-fill').style.width=((current+1)/total*100)+'%';
+  document.getElementById('act-overlay-name').textContent=actNames[current]||'Actividad';
+  playClick();
+}
+function navigate(d){ goTo(current+d); }
+document.addEventListener('keydown',e=>{
+  if(['ArrowRight','Space'].includes(e.code)){ e.preventDefault(); navigate(1); }
+  if(e.code==='ArrowLeft'){ e.preventDefault(); navigate(-1); }
+});
+
+var aSecs=900,aTotal=900,aInt=null,aRun=false;
+function fmt(s){ return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0'); }
+function updA(){
+  var d=document.getElementById('act-display'),f=document.getElementById('act-progress-fill');
+  if(!d||!f)return;
+  d.textContent=fmt(aSecs); d.classList.toggle('urgent',aSecs<=60);
+  f.style.width=aTotal>0?(aSecs/aTotal*100)+'%':'0%'; f.classList.toggle('urgent',aSecs<=60);
+}
+function toggleActPanel(){
+  var p=document.getElementById('act-panel');
+  if(!p)return;
+  if(p.classList.contains('show')){ p.classList.remove('show'); p.style.display=''; }
+  else{ resetAct(); p.classList.add('show'); p.style.display='flex'; p.style.flexDirection='column'; }
+}
+function startAct(){
+  if(aRun)return; aRun=true;
+  var s=document.getElementById('btnStartAct'),pa=document.getElementById('btnPauseAct'),r=document.getElementById('btnResumeAct');
+  if(s)s.style.display='none'; if(r)r.style.display='none'; if(pa)pa.style.display='';
+  playTickSequence();
+  var warned=false;
+  aInt=setInterval(function(){ if(aSecs<=0){ clearInterval(aInt); aRun=false; showStartBtn(); playFinished(); return; } aSecs--; if(aSecs===60&&!warned){ warned=true; playWarning(); } updA(); },1000);
+}
+function pauseAct(){
+  clearInterval(aInt); aRun=false;
+  var pa=document.getElementById('btnPauseAct'),r=document.getElementById('btnResumeAct');
+  if(pa)pa.style.display='none'; if(r)r.style.display='';
+}
+function resumeAct(){
+  var r=document.getElementById('btnResumeAct'),pa=document.getElementById('btnPauseAct');
+  if(r)r.style.display='none'; if(pa)pa.style.display=''; startAct();
+}
+function showStartBtn(){
+  var s=document.getElementById('btnStartAct'),pa=document.getElementById('btnPauseAct'),r=document.getElementById('btnResumeAct');
+  if(s)s.style.display=''; if(pa)pa.style.display='none'; if(r)r.style.display='none';
+}
+function resetAct(){
+  clearInterval(aInt); aRun=false;
+  aTotal=actPresets[current]||900; aSecs=aTotal;
+  var n=document.getElementById('act-overlay-name'); if(n)n.textContent=actNames[current]||'Actividad';
+  showStartBtn(); updA();
+}
+
+goTo(0);
+resetAct();
+</script>
+</body>
+</html>
